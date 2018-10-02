@@ -1,0 +1,28 @@
+{
+  "name": "mdtex",
+  "version": "0.0.0",
+  "description": "markdown + latex rendering",
+  "main": "mdtex.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/opeltre/mdtex.git"
+  },
+  "keywords": [
+    "markdown",
+    "tex",
+    "latex",
+    "mathjax"
+  ],
+  "author": "Olivier Peltre",
+  "license": "GPL-2.0",
+  "bugs": {
+    "url": "https://github.com/opeltre/mdtex/issues"
+  },
+  "homepage": "https://github.com/opeltre/mdtex#readme",
+  "dependencies": {
+    "marked": "^0.5.1"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "mdtex",
+  "name": "@opeltre/mdtex",
   "version": "0.0.0",
   "description": "markdown + latex rendering",
   "main": "mdtex.js",

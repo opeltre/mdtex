@@ -2,7 +2,7 @@
 
 markdown + latex rendering 
 
-tweak marked to go along with mathjax. 
+tweak marked to go along with mathjax.
 
 # usage
 
@@ -10,7 +10,7 @@ tweak marked to go along with mathjax.
 
 Install with `npm i @opeltre/mdtex` and:
 ```javascript
-let mdtex = require('mdtex');
+let mdtex = require('@opeltre/mdtex');
 ```
 then take care of mathjax.
 

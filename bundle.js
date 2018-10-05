@@ -1,4 +1,201 @@
-/* mdtex bundle */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.mdtex = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+let __ = {};
+
+__.id =
+    x => x;
+
+__.$ = 
+    (...xs) => 
+        f => f(...xs);
+
+__.pipe = 
+    (f=__.id, ...fs) => fs.length
+        ? (...xs) =>  __.pipe(...fs)(f(...xs))
+        : (...xs) => f(...xs);
+
+__.forKeys = 
+    (...fs) => 
+        obj => Object.keys(obj).forEach(
+            k => __.pipe(...fs)(k, obj[k])
+        );
+
+__.getset = getset;
+
+function getset (obj, attrs) {
+    let method = 
+        key => function (x) {
+            if (!arguments.length)
+                return attrs[key];
+            attrs[key] = x;
+            return obj;
+        };
+    __.forKeys(
+        key => obj[key] = method(key)
+    )(attrs);
+    return obj;
+}
+
+module.exports = __;
+
+},{}],2:[function(require,module,exports){
+let __ = require('./lib/__.js');
+var marked = require('marked');
+module.exports = mdtex;
+
+function mdtex (text) {
+// mdtex {-----> 
+
+
+/* 
+Lexer :: 
+    Str  
+    ->  
+    { 
+        match   : [ Str, Str, Str ] || Null,
+        lexer   : Lexer,
+        index   : Int
+    }
+
+lexer :: 
+    { 
+        read    : [ Str, Str ],
+        write   : [ Str, Str ],
+        state   : Bool,
+        _name    : Str
+    } 
+    -> 
+    Lexer
+
+*/
+
+let lexemes = [
+
+    lexer()
+        ._name('imath')
+        .read([ /(\\){1,2}\(/, /(\\){1,2}\)/ ])
+        .write([
+            '<script type="math/tex">',
+            '</script>'
+        ]),
+
+    lexer()
+        ._name('math')
+        .read([ /(\\){1,2}\[/, /(\\){1,2}\]/ ])
+        .write([
+            '<script type="math/tex; mode=display">',
+            '</script>'
+        ]),
+
+    lexer() 
+        ._name('code')
+        .read([ /`/, /`/ ])
+        .write(['`', '`']),
+
+    lexer()
+        ._name('codeblock')
+        .read([ /```/, /```/])
+        .write(['```', '```'])
+];
+
+
+function parser (text) {
+    
+    let eqs = [],
+        eqToken = i => '$TeX%' + i + '$';
+
+
+    let insertEq = (eq, i) => 
+        txt => txt.replace(eqToken(i), eq);
+
+    let insertEqs = text => 
+        __.pipe(...eqs.map(insertEq))(text);
+
+    return __.pipe(
+        read,
+        marked,
+        insertEqs
+    )(text);
+
+    function read (str, lex=lexemes) {
+        
+        let [m, ...ms] = lex
+            .map(__.$(str))
+            .filter(x => x.match)
+            .sort((x,y) => x.index >= y.index);
+
+        if (!m) return (str);
+
+        let l = m.lex(0);
+        let before, after;
+        
+        if (l._name() === 'imath') {
+            if (!l.state()) {
+                before = m.match[0];
+                after = m.match[1] + m.match[2];
+            } else {
+                before = eqToken(eqs.length);
+                after = m.match[2];
+                eqs.push(m.match[0] + m.match[1]);
+            }
+        } 
+        else {
+            before = m.match[0] + m.match[1];
+            after = m.match[2];
+        }
+
+        lex = !l.state() 
+            ? [m.lex(1)]
+            : lexemes;
+        
+        return before + read(after, lex);
+    }
+
+}
+
+function lexer (C) {
+
+    let self = {
+            _name : '<lexer>',
+            read :  null,
+            write : null,
+            state : 0,
+        };
+
+    Object.assign(self, C || {});
+
+    let lex = __.pipe(
+        m => Object.assign({},
+            self, 
+            {state : (self.state + !!m) % 2}
+        ),
+        lexer
+    );
+
+    function my (str) {
+
+        let i = self.state;
+        let m = str.match(self.read[i]);
+
+        return {
+            match : m && [
+                str.slice(0, m.index), 
+                self.write[i],
+                str.slice(m.index + m[0].length)
+            ],
+            index : m && m.index,
+            lex : lex,
+        };
+    }
+
+    return __.getset(my, self);
+}
+
+// <-----} mdtex 
+return parser(text);
+} 
+
+},{"./lib/__.js":1,"marked":3}],3:[function(require,module,exports){
+(function (global){
 /**
  * marked - a markdown parser
  * Copyright (c) 2011-2018, Christopher Jeffrey. (MIT Licensed)
@@ -1603,199 +1800,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
   root.marked = marked;
 }
 })(this || (typeof window !== 'undefined' ? window : global));
-if (require && typeof window === 'undefined') {
-    var __ = require('./lib/__.js');
-    var marked = require('marked');
-    module.exports = mdtex;
-}
 
-function mdtex (text) {
-// mdtex {-----> 
-
-
-/* 
-Lexer :: 
-    Str  
-    ->  
-    { 
-        match   : [ Str, Str, Str ] || Null,
-        lexer   : Lexer,
-        index   : Int
-    }
-
-lexer :: 
-    { 
-        read    : [ Str, Str ],
-        write   : [ Str, Str ],
-        state   : Bool,
-        _name    : Str
-    } 
-    -> 
-    Lexer
-
-*/
-
-let lexemes = [
-
-    lexer()
-        ._name('imath')
-        .read([ /(\\){1,2}\(/, /(\\){1,2}\)/ ])
-        .write([
-            '<script type="math/tex">',
-            '</script>'
-        ]),
-
-    lexer()
-        ._name('math')
-        .read([ /(\\){1,2}\[/, /(\\){1,2}\]/ ])
-        .write([
-            '<script type="math/tex; mode=display">',
-            '</script>'
-        ]),
-
-    lexer() 
-        ._name('code')
-        .read([ /`/, /`/ ])
-        .write(['`', '`']),
-
-    lexer()
-        ._name('codeblock')
-        .read([ /```/, /```/])
-        .write(['```', '```'])
-];
-
-function parser (text) {
-    
-    let eqs = [],
-        eqToken = i => '$TeX%' + i + '$';
-
-    let __ = __lib();
-
-    let insertEq = (eq, i) => 
-        txt => txt.replace(eqToken(i), eq);
-
-    let insertEqs = text => 
-        __.pipe(...eqs.map(insertEq))(text);
-
-    return __.pipe(
-        read,
-        marked,
-        insertEqs
-    )(text);
-
-    function read (str, lex=lexemes) {
-        
-        let [m, ...ms] = lex
-            .map(__.$(str))
-            .filter(x => x.match)
-            .sort((x,y) => x.index >= y.index);
-
-        if (!m) return (str);
-
-        let l = m.lex(0);
-        let before, after;
-        
-        if (l._name() === 'imath') {
-            if (!l.state()) {
-                before = m.match[0];
-                after = m.match[1] + m.match[2];
-            } else {
-                before = eqToken(eqs.length);
-                after = m.match[2];
-                eqs.push(m.match[0] + m.match[1]);
-            }
-        } 
-        else {
-            before = m.match[0] + m.match[1];
-            after = m.match[2];
-        }
-
-        lex = !l.state() 
-            ? [m.lex(1)]
-            : lexemes;
-        
-        return before + read(after, lex);
-    }
-}
-
-function lexer (C) {
-
-    let self = {
-            _name : '<lexer>',
-            read :  null,
-            write : null,
-            state : 0,
-        };
-
-    Object.assign(self, C || {});
-
-    let lex = __.pipe(
-        m => Object.assign({},
-            self, 
-            {state : (self.state + !!m) % 2}
-        ),
-        lexer
-    );
-
-    function my (str) {
-
-        let i = self.state;
-        let m = str.match(self.read[i]);
-
-        return {
-            match : m && [
-                str.slice(0, m.index), 
-                self.write[i],
-                str.slice(m.index + m[0].length)
-            ],
-            index : m && m.index,
-            lex : lex,
-        };
-    }
-
-    return __.getset(my, self);
-}
-
-function __lib () {
-    let __ = {};
-
-    __.id =
-        x => x;
-
-    __.$ = 
-        (...xs) => 
-            f => f(...xs);
-
-    __.pipe = 
-        (f=__.id, ...fs) => fs.length
-            ? (...xs) =>  __.pipe(...fs)(f(...xs))
-            : (...xs) => f(...xs);
-
-    __.forKeys = 
-        (...fs) => 
-            obj => Object.keys(obj).forEach(
-                k => __.pipe(...fs)(k, obj[k])
-            );
-
-    __.getset = getset;
-
-    function getset (obj, attrs) {
-        let method = 
-            key => function (x) {
-                if (!arguments.length)
-                    return attrs[key];
-                attrs[key] = x;
-                return obj;
-            };
-        __.forKeys(
-            key => obj[key] = method(key)
-        )(attrs);
-        return obj;
-    }
-    return __;
-}
-
-
-// <-----} mdtex 
-return parser(text);
-} 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}]},{},[2])(2)
+});

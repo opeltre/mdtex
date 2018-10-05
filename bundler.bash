@@ -1,16 +1,18 @@
 #!/bin/bash
 deps=(\
-    'lib/__' \
     'node_modules/marked/lib/marked' \
     'mdtex' \
 )
 bundle='bundle.js'
 
-echo '/* mdtex bundle */' > $(pwd)/$bundle && echo "bundling..."
+b=$(pwd)/$bundle
+
+echo '/* mdtex bundle */' > $b && echo "bundling..."
+echo 'function mdtex(text) { return parse(text); ' > $b
 
 for d in ${deps[*]}
 do  
-    cat $(pwd)/$d.js >> $(pwd)/$bundle && echo "->  $d.js"
+    cat $(pwd)/$d.js >> $b && echo "->  $d.js"
 done
 
-echo "...done"
+echo '}' > $b   && echo "...done"

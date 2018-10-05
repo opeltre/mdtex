@@ -1,5 +1,4 @@
 /* mdtex bundle */
-function mdtex(text) { return parse(text); 
 /**
  * marked - a markdown parser
  * Copyright (c) 2011-2018, Christopher Jeffrey. (MIT Licensed)
@@ -1800,4 +1799,3 @@ function __lib () {
 // <-----} mdtex 
 return parser(text);
 } 
-}

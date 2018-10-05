@@ -1,6 +1,6 @@
 {
   "name": "@opeltre/mdtex",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "markdown + latex rendering",
   "main": "mdtex.js",
   "scripts": {
